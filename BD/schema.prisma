@@ -1,117 +1,111 @@
-// prisma/schema.prisma
-// Define your database models
+// =============================================
+//            BASE DE DATOS LERMA (PRISMA)
+// =============================================
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url = env("DATABASE_URL")
 }
 
+// =============================================
+//                 MODELOS
+// =============================================
 
-// Modelo: usuarios
 model User {
-  id        Int       @id @default(autoincrement())
-  nombre    String
-  email     String    @unique
-  rol       String    @default("ciudadano")
+  id              Int             @id @default(autoincrement())
+  nombre          String
+  email           String          @unique
+  rol             String          @default("usuario")
+  fechaCreacion   DateTime        @default(now())
 
   // Relaciones
-  publicaciones  Publicacion[]
-  comentarios    Comentario[]
-  puntos         PuntoMapa[]
-
-  createdAt DateTime @default(now())
+  puntosMapa      PuntoMapa[]
+  publicaciones   Publicacion[]
+  comentarios     Comentario[]
 }
 
-
-// Modelo: guardado de puntos en el mapa
 model PuntoMapa {
   id          Int       @id @default(autoincrement())
   nombre      String
   descripcion String?
-  tipo        String      // que tipo de indicador es
+  tipo        String      // contaminación, proyecto, monitoreo…
   lat         Float
   lng         Float
   fecha       DateTime    @default(now())
 
-  // llaves foraneas
-  usuario     User        @relation(fields: [usuarioId], references: [id])
-  usuarioId   Int
+  // FK
+  usuario     User?       @relation(fields: [usuarioId], references: [id])
+  usuarioId   Int?
 }
 
-
-// Modelo: publicaciones
 model Publicacion {
-  id          Int       @id @default(autoincrement())
-  titulo      String
-  descripcion String
-  estado      String      // estado de la republica
-  lat         Float?
-  lng         Float?
-  fecha       DateTime   @default(now())
+  id           Int          @id @default(autoincrement())
+  titulo       String
+  descripcion  String
+  estado       String
+  lat          Float?
+  lng          Float?
+  fecha        DateTime      @default(now())
+
+  // FK
+  usuario      User?         @relation(fields: [usuarioId], references: [id])
+  usuarioId    Int?
 
   // Relaciones
-  comentarios Comentario[]
-  usuario     User       @relation(fields: [usuarioId], references: [id])
-  usuarioId   Int
-
-  categoriaId Int?       
-  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
+  comentarios  Comentario[]
+  categorias   PublicacionCategoria[]
 }
 
-
-// MODELO: COMENTARIOS
 model Comentario {
   id         Int       @id @default(autoincrement())
   contenido  String
   fecha      DateTime  @default(now())
 
-  // Relaciones
-  publicacion Publicacion @relation(fields: [postId], references: [id])
-  postId      Int
+  // FK
+  post       Publicacion @relation(fields: [postId], references: [id])
+  postId     Int
 
-  usuario     User @relation(fields: [usuarioId], references: [id])
-  usuarioId   Int
+  usuario    User?       @relation(fields: [usuarioId], references: [id])
+  usuarioId  Int?
 }
 
-
-// MODELO: ALERTAS
 model Alerta {
-  id          Int       @id @default(autoincrement())
-  tipo        String
-  mensaje     String
-  nivelRiesgo String     // bajo, medio, alto
-  estado      String
-  fecha       DateTime   @default(now())
-  datosClima  Json?      // JSONB: detalles del clima, IA, predicción
-
-  // Relación opcional con reporte climático
-  reporteClimaticoId Int?
-  reporteClimatico   ReporteClimatico? @relation(fields: [reporteClimaticoId], references: [id])
+  id           Int       @id @default(autoincrement())
+  tipo         String
+  mensaje      String
+  nivelRiesgo  String?    // bajo, medio, alto
+  estado       String
+  datosClima   Json?
+  fecha        DateTime   @default(now())
 }
 
-
-// MODELO: REPORTE CLIMÁTICO (datos automáticos)
 model ReporteClimatico {
-  id          Int       @id @default(autoincrement())
-  estado      String
-  temperatura Float
-  lluvia      Float
-  viento      Float
-  fecha       DateTime @default(now())
-
-  // Una alerta puede estar basada en un reporte climático
-  alertas     Alerta[]
+  id           Int       @id @default(autoincrement())
+  estado       String
+  temperatura  Float?
+  lluvia       Float?
+  viento       Float?
+  fecha        DateTime   @default(now())
 }
 
-
-// MODELO: CATEGORÍAS (opcional, para IA)
 model Categoria {
-  id      Int       @id @default(autoincrement())
-  nombre  String
-  posts   Publicacion[]
+  id           Int       @id @default(autoincrement())
+  nombre       String     @unique
+
+  publicaciones PublicacionCategoria[]
 }
 
+// RELACIÓN MANY-TO-MANY PUBLICACION <-> CATEGORIA
+model PublicacionCategoria {
+  publicacionId Int
+  categoriaId   Int
+
+  publicacion   Publicacion @relation(fields: [publicacionId], references: [id])
+  categoria     Categoria   @relation(fields: [categoriaId], references: [id])
+
+  @@id([publicacionId, categoriaId])
+}
