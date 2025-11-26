@@ -5,7 +5,7 @@ export const db = await mysql.createPool({
   host: "localhost",
   user: "root",
   password: "",           // tu contraseña
-  database: "lerma",      // tu base de datos
+  database: "hackatec",      // tu base de datos
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
