@@ -2,6 +2,8 @@
 -- DATABASE: Lerma (MySQL)
 -- ================================================
 
+CREATE DATABASE IF NOT EXISTS hackatec;
+
 -- USERS
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
